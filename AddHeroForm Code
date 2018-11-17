@@ -1,0 +1,175 @@
+Option Explicit
+
+
+Private Sub btnDone_Click()
+
+    Dim AddHeroForm As ufAddHeroForm
+    Set AddHeroForm = Me
+
+    If ErrorsPresent(AddHeroForm) = False Then
+        Dim lngLastRow As Long
+        Dim lngLastColumn As Long
+        Dim rngEntireTable As Range
+        
+        With HeroCapabilities
+            lngLastRow = GetLastRowOfSheetInColumn(HeroCapabilities, 1)
+            
+            Dim lngHeroColumn As Long
+            lngHeroColumn = GetCellWithValueInRange(.Rows(1), "Hero", True).Column
+            Dim lngColorColumn As Long
+            lngColorColumn = GetCellWithValueInRange(.Rows(1), "Color", True).Column
+            Dim lngOverallRatingColumn As Long
+            lngOverallRatingColumn = GetCellWithValueInRange(.Rows(1), "Overall Rating", True).Column
+            Dim lngLowestObservedRatingColumn As Long
+            lngLowestObservedRatingColumn = GetCellWithValueInRange(.Rows(1), "Low. Observed", True).Column
+
+            Dim lng5v5Column As Long
+            lng5v5Column = GetCellWithValueInRange(.Rows(1), "5v5", True).Column
+            Dim lng5v5EligibleColumn As Long
+            lng5v5EligibleColumn = GetCellWithValueInRange(.Rows(1), "5v5 Eligible", True).Column
+            Dim lngPurpleRitualMaterialColumn As Long
+            lngPurpleRitualMaterialColumn = GetCellWithValueInRange(.Rows(1), "Purple Ritual", True).Column
+        
+                    
+            .Cells(lngLastRow + 1, lngHeroColumn).Value = AddHeroForm.textboxHeroName.Value
+            
+            If AddHeroForm.radioFire = True Then .Cells(lngLastRow + 1, lngColorColumn).Value = 1
+            If AddHeroForm.radioWater = True Then .Cells(lngLastRow + 1, lngColorColumn).Value = 2
+            If AddHeroForm.radioNature = True Then .Cells(lngLastRow + 1, lngColorColumn).Value = 3
+            If AddHeroForm.radioLight = True Then .Cells(lngLastRow + 1, lngColorColumn).Value = 4
+            If AddHeroForm.radioDark = True Then .Cells(lngLastRow + 1, lngColorColumn).Value = 5
+            
+            If AddHeroForm.radioBestInGame = True Then .Cells(lngLastRow + 1, lngOverallRatingColumn).Value = 4
+            If AddHeroForm.radioMustHave = True Then .Cells(lngLastRow + 1, lngOverallRatingColumn).Value = 3
+            If AddHeroForm.radioKeepIt = True Then .Cells(lngLastRow + 1, lngOverallRatingColumn).Value = 2
+            If AddHeroForm.radioNeither = True Then .Cells(lngLastRow + 1, lngOverallRatingColumn).Value = 0
+            
+            If AddHeroForm.textboxLowestObservedRating.Value <> vbNullString Then
+                .Cells(lngLastRow + 1, lngLowestObservedRatingColumn).Value = AddHeroForm.textboxLowestObservedRating.Value
+            Else
+                .Cells(lngLastRow + 1, lngLowestObservedRatingColumn).Value = .Cells(lngLastRow + 1, lngOverallRatingColumn).Value
+            End If
+            
+            Dim lngLowestObservedRating As Long
+            lngLowestObservedRating = WorksheetFunction.Min(.Cells(lngLastRow + 1, lngOverallRatingColumn).Value, .Cells(lngLastRow + 1, lngOverallRatingColumn).Value)
+            .Range(.Cells(lngLastRow + 1, 7), .Cells(lngLastRow + 1, 15)).Value = lngLowestObservedRating
+            
+            If AddHeroForm.chkbox5v5Competitor = True Then
+                .Cells(lngLastRow + 1, lng5v5EligibleColumn).Value = "Y"
+                .Cells(lngLastRow + 1, lng5v5Column).Value = lngLowestObservedRating
+            Else
+                .Cells(lngLastRow + 1, lng5v5EligibleColumn).Value = "N"
+                .Cells(lngLastRow + 1, lng5v5Column).Value = 0
+            End If
+            
+            If AddHeroForm.chkboxPurpleRitualMaterial = True Then
+                .Cells(lngLastRow + 1, lngPurpleRitualMaterialColumn).Value = "Y"
+            Else
+                .Cells(lngLastRow + 1, lngPurpleRitualMaterialColumn).Value = "N"
+            End If
+            
+            
+            lngLastRow = GetLastRowOfSheetInColumn(HeroContributionsToTeam, 1)
+            lngLastColumn = GetLastColumnOfSheetInRow(HeroContributionsToTeam, 1)
+            
+            Set rngEntireTable = .Range(.Cells(1, 1), .Cells(lngLastRow, lngLastColumn))
+                        
+            rngEntireTable.Sort Key1:=.Cells(2, lngColorColumn), Order1:=xlAscending, Key2:=.Cells(2, lngHeroColumn), Order2:=xlAscending, Header:=xlYes
+        End With
+        
+        Me.Hide
+        MsgBox "Hero Added."
+    End If
+
+End Sub
+
+
+Private Function ErrorsPresent(ByVal AddHeroForm As ufAddHeroForm) As Boolean
+
+    ErrorsPresent = False
+    
+    With AddHeroForm
+        If .textboxHeroName.Value = vbNullString Then
+            MsgBox "Must include Hero Name."
+            ErrorsPresent = True
+            Exit Function
+        End If
+    
+        If .radioBestInGame = False And .radioMustHave = False And .radioKeepIt = False And .radioNeither = False Then
+            MsgBox "Must select Overall Rating."
+            ErrorsPresent = True
+            Exit Function
+        End If
+    
+        If .radioFire = False And .radioWater = False And .radioNature = False And .radioLight = False And .radioDark = False Then
+            MsgBox "Must select Element."
+            ErrorsPresent = True
+            Exit Function
+        End If
+    End With
+
+End Function
+
+
+Private Function GetLastRowOfSheetInColumn(ByVal ShtInQuestion As Worksheet, ByVal lngColumnInQuestion As Long) As Long
+
+    With ShtInQuestion
+        'Using the end up method on a full sheet will go all the way to the top
+        If .Cells(.Rows.Count, lngColumnInQuestion).Value <> vbNullString Then
+            GetLastRowOfSheetInColumn = .Rows.Count
+        Else
+            GetLastRowOfSheetInColumn = .Cells(.Rows.Count, lngColumnInQuestion).End(xlUp).Row
+        End If
+    End With
+
+End Function
+
+
+Private Function GetLastColumnOfSheetInRow(ByVal ShtInQuestion As Worksheet, ByVal lngRowInQuestion As Long) As Long
+
+    With ShtInQuestion
+        'Using the end left method on a full sheet will go all the way to the left
+        If .Cells(lngRowInQuestion, .Columns.Count).Value <> vbNullString Then
+            GetLastColumnOfSheetInRow = .Columns.Count
+        Else
+            GetLastColumnOfSheetInRow = .Cells(lngRowInQuestion, .Columns.Count).End(xlToLeft).Column
+        End If
+    End With
+
+End Function
+
+
+Private Function GetCellWithValueInRange(ByVal rngToSearch As Range, ByVal strValueToFind As String, ByVal boolWholeValue As Boolean) As Range
+
+    Dim rngFound As Range
+    If boolWholeValue = True Then
+        Set rngFound = rngToSearch.Find(What:=strValueToFind, LookAt:=xlWhole)
+    Else
+        Set rngFound = rngToSearch.Find(What:=strValueToFind, LookAt:=xlPart)
+    End If
+
+    If rngFound Is Nothing Then
+        MsgBox "Can't find " & strValueToFind & " in " & rngToSearch.Address & " on the " & rngToSearch.Parent.Name & " sheet of the " & rngToSearch.Parent.Parent.Name & " workbook. This program cannot continue until it is present."
+        'Cancel
+    End If
+    
+    Set GetCellWithValueInRange = rngFound
+    
+End Function
+
+
+Private Function ConvertRangeToArray(ByVal rngInQuestion As Range) As Variant
+
+    Dim arrRangeToArray() As Variant
+    With rngInQuestion
+        If .Cells.Count = 1 Then
+            ReDim arrRangeToArray(1 To 1, 1 To 1)
+            arrRangeToArray(1, 1) = .Cells(1, 1).Value
+        Else
+            arrRangeToArray = .Value
+        End If
+    End With
+
+    ConvertRangeToArray = arrRangeToArray
+
+End Function
