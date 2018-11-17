@@ -1,0 +1,5 @@
+v1.10
+Improved ability to use rating numbers besides 1-4 by making a setting that helps adjust the formulas on the Team Overview sheet
+
+v1.00
+initial release
