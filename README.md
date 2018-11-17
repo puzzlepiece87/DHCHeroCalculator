@@ -1,10 +1,10 @@
 # DHCHeroCalculator
 
-I'm getting warnings about macros. Is this calculator trying to execute malicious code on my computer?:
-No, but malicious macros can be attached to Microsoft Office documents, so I'm glad you're suspicious. To alleviate concerns, all of the code included in the calculator is saved here separately in project files for your review. In addition, you can simply choose not to enable macros and review the code directly in the program by pushing Alt-F11 to bring up the VBE Editor. Or, finally, you can simply convert the file to .xlsx format, stripping it of the code, and use the Example Formulas to update the calculator by hand.  
+I'm getting warnings about macros. Is this calculator trying to execute malicious code on my computer?
+* No, but malicious macros can be attached to Microsoft Office documents, so I'm glad you're suspicious. To alleviate concerns, all of the code included in the calculator is saved here separately in project files for your review. In addition, you can simply choose not to enable macros and review the code directly in the program by pushing Alt-F11 to bring up the VBE Editor. Or, finally, you can simply convert the file to .xlsx format, stripping it of the code, and use the Example Formulas to update the calculator by hand.  
 
-Required software:
-This calculator requires a program that can open an .xlsm file. To make full use of the calculator's automated features,
+Required software
+* This calculator requires a program that can open an .xlsm file. To make full use of the calculator's automated features,
 this would be a copy of Microsoft Excel, but the calculator can also be easily modified to work without access to VBA.
 
 To use this calculator without VBA:
