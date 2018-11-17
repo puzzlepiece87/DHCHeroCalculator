@@ -1,0 +1,35 @@
+Color Sensitive Comparisons
+
+Plain English:
+If (
+    (
+        Number of Heroes of same color and greater power in that activity +
+        Number of Heroes of different color and greater (power in that activity - handicap)
+    ) >= Maximum Heroes for that activity
+Then
+    0
+Else
+    Hero power for that activity
+
+Formula
+=IF((COUNTIFS('Hero Capabilities'!$B:$B,'Hero Contributions to Team'!$B2,'Hero Capabilities'!G:G,">"&'Hero Capabilities'!G2)+COUNTIFS('Hero Capabilities'!$B:$B,"<>"&'Hero Contributions to Team'!$B2,'Hero Capabilities'!G:G,">"&'Hero Capabilities'!G2+Settings!$B$2))>=Settings!F$2,0,'Hero Capabilities'!G2)
+
+
+Color Insensitive Comparisons
+
+Plain English:
+If
+    Number of Heroes of greater power in that activity >= Maximum Heroes for that activity
+Then
+    0
+Else
+    Hero power for that activity
+
+Formula
+=IF(COUNTIFS('Hero Capabilities'!P:P,">"&'Hero Capabilities'!P2)>=Settings!O$2,0,'Hero Capabilities'!P2)
+
+
+Grand Total
+
+Formula
+=SUM(G2:P2)
