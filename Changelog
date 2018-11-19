@@ -1,5 +1,5 @@
 v1.11
-Added missing "<>" into HeroesNotOfSameColorAndGreaterPower calculation
+Added missing "<>" into HeroesOfDifferentColorAndGreaterPowerMinusHandicap calculation
 
 v1.10
 Improved ability to use rating numbers besides 1-4 by making a setting that helps adjust the formulas on the Team Overview sheet
