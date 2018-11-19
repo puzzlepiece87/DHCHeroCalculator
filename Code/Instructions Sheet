@@ -67,7 +67,7 @@ Private Sub UpdateCalculator_Click()
                 Dim lngHeroesOfSameColorAndGreaterPower As Long
                 lngHeroesOfSameColorAndGreaterPower = WorksheetFunction.CountIfs(HeroCapabilities.Columns(2), HeroCapabilities.Cells(Loop1 + 1, 2), HeroCapabilities.Columns(Loop2 + 6), ">" & HeroCapabilities.Cells(Loop1 + 1, Loop2 + 6))
                 Dim lngHeroesOfDifferentColorAndGreaterPowerMinusHandicap As Long
-                lngHeroesOfDifferentColorAndGreaterPowerMinusHandicap = WorksheetFunction.CountIfs(HeroCapabilities.Columns(2), HeroCapabilities.Cells(Loop1 + 1, 2), HeroCapabilities.Columns(Loop2 + 6), ">" & HeroCapabilities.Cells(Loop1 + 1, Loop2 + 6) + 1)
+                lngHeroesOfDifferentColorAndGreaterPowerMinusHandicap = WorksheetFunction.CountIfs(HeroCapabilities.Columns(2), "<>" & HeroCapabilities.Cells(Loop1 + 1, 2), HeroCapabilities.Columns(Loop2 + 6), ">" & HeroCapabilities.Cells(Loop1 + 1, Loop2 + 6) + 1)
 
                 If lngHeroesOfSameColorAndGreaterPower + lngHeroesOfDifferentColorAndGreaterPowerMinusHandicap >= Settings.Cells(2, Loop2 + 6 - 1).Value Then
                     arrColorSensitive(Loop1, Loop2) = 0
