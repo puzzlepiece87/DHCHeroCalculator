@@ -51,7 +51,7 @@ Private Sub btnDone_Click()
             End If
             
             Dim lngLowestObservedRating As Long
-            lngLowestObservedRating = WorksheetFunction.Min(.Cells(lngLastRow + 1, lngOverallRatingColumn).Value, .Cells(lngLastRow + 1, lngOverallRatingColumn).Value)
+            lngLowestObservedRating = WorksheetFunction.Min(.Cells(lngLastRow + 1, lngOverallRatingColumn).Value, .Cells(lngLastRow + 1, lngLowestObservedRatingColumn).Value)
             .Range(.Cells(lngLastRow + 1, 7), .Cells(lngLastRow + 1, 15)).Value = lngLowestObservedRating
             
             If AddHeroForm.chkbox5v5Competitor = True Then
