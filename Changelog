@@ -1,3 +1,6 @@
+v1.12
+Fixed color insensitive formula taking color into account improperly and Add New Hero button not properly including Lowest Observed Value in minimum function
+
 v1.11
 Added missing "<>" into HeroesOfDifferentColorAndGreaterPowerMinusHandicap calculation
 
