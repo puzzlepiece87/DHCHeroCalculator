@@ -89,7 +89,7 @@ Private Sub UpdateCalculator_Click()
         For Loop1 = LBound(arrColorInsensitive, 1) To UBound(arrColorInsensitive, 1)
             For Loop2 = LBound(arrColorInsensitive, 2) To UBound(arrColorInsensitive, 2)
                 Dim lngHeroesOfGreaterPower As Long
-                lngHeroesOfGreaterPower = WorksheetFunction.CountIfs(HeroCapabilities.Columns(2), HeroCapabilities.Cells(Loop1 + 1, 2), HeroCapabilities.Columns(Loop2 + 15), ">" & HeroCapabilities.Cells(Loop1 + 1, Loop2 + 15))
+                lngHeroesOfGreaterPower = WorksheetFunction.CountIfs(HeroCapabilities.Columns(Loop2 + 15), ">" & HeroCapabilities.Cells(Loop1 + 1, Loop2 + 15))
 
                 If lngHeroesOfGreaterPower >= Settings.Cells(2, Loop2 + 15 - 1).Value Then
                     arrColorInsensitive(Loop1, Loop2) = 0
