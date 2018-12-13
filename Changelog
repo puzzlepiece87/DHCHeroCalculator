@@ -1,3 +1,6 @@
+v1.20
+Added Outer Harbringer column and made it much easier to add new bosses/game modes to the program in the future
+
 v1.12
 Fixed color insensitive formula taking color into account improperly and Add New Hero button not properly including Lowest Observed Value in minimum function
 
