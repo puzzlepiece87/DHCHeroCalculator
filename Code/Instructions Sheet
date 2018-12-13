@@ -12,128 +12,14 @@ End Sub
 
 Private Sub UpdateCalculator_Click()
 
-    MatchHeroContributionsToTeamWithHeroCapabilities
-
-
-    Dim lngLastRow As Long
-    Dim lngLastColumn As Long
-    Dim rngEntireTable As Range
-    
-    Dim lngHeroColumn As Long
-    Dim lngColorColumn As Long
-    Dim lngGrandTotalColumn As Long
+    MatchHeroListingsBetweenSheets
+    SortBothHeroTablesTheSameWay
+    CalculateColorSensitiveContributions
+    CalculateColorInsensitiveContributions
+    CalculateGrandTotalColumn
+    CopyOverPurpleRitualMaterialColumn
+    SortHeroContributionsToTeamTableByContribution
         
-    Dim Loop1 As Long
-    Dim Loop2 As Long
-    
-    
-    With HeroCapabilities
-        lngLastRow = GetLastRowOfSheetInColumn(HeroContributionsToTeam, 1)
-        lngLastColumn = GetLastColumnOfSheetInRow(HeroContributionsToTeam, 1)
-        
-        Set rngEntireTable = .Range(.Cells(1, 1), .Cells(lngLastRow, lngLastColumn))
-        
-        lngHeroColumn = GetCellWithValueInRange(.Rows(1), "Hero", True).Column
-        lngColorColumn = GetCellWithValueInRange(.Rows(1), "Color", True).Column
-        
-        rngEntireTable.Sort Key1:=.Cells(2, lngColorColumn), Order1:=xlAscending, Key2:=.Cells(2, lngHeroColumn), Order2:=xlAscending, Header:=xlYes
-    End With
-        
-    
-    With HeroContributionsToTeam
-        lngLastRow = GetLastRowOfSheetInColumn(HeroContributionsToTeam, 1)
-        lngLastColumn = GetLastColumnOfSheetInRow(HeroContributionsToTeam, 1)
-        
-        Set rngEntireTable = .Range(.Cells(1, 1), .Cells(lngLastRow, lngLastColumn))
-        
-        lngHeroColumn = GetCellWithValueInRange(.Rows(1), "Hero", True).Column
-        lngColorColumn = GetCellWithValueInRange(.Rows(1), "Color", True).Column
-        lngGrandTotalColumn = GetCellWithValueInRange(.Rows(1), "Grand Total", True).Column
-        
-        rngEntireTable.Sort Key1:=.Cells(2, lngColorColumn), Order1:=xlAscending, Key2:=.Cells(2, lngHeroColumn), Order2:=xlAscending, Header:=xlYes
-        
-        
-        Dim lngHandicap As Long
-        lngHandicap = GetCellWithValueInRange(Settings.Columns(1), "Off-Element Handicap", True).Offset(0, 1).Value
-        
-        Dim rngColorSensitive As Range
-        Set rngColorSensitive = .Range(.Cells(2, 7), .Cells(lngLastRow, 15))
-        
-        Dim arrColorSensitive() As Variant
-        arrColorSensitive = ConvertRangeToArray(rngColorSensitive)
-        
-        For Loop1 = LBound(arrColorSensitive, 1) To UBound(arrColorSensitive, 1)
-            For Loop2 = LBound(arrColorSensitive, 2) To UBound(arrColorSensitive, 2)
-                Dim lngHeroesOfSameColorAndGreaterPower As Long
-                lngHeroesOfSameColorAndGreaterPower = WorksheetFunction.CountIfs(HeroCapabilities.Columns(2), HeroCapabilities.Cells(Loop1 + 1, 2), HeroCapabilities.Columns(Loop2 + 6), ">" & HeroCapabilities.Cells(Loop1 + 1, Loop2 + 6))
-                Dim lngHeroesOfDifferentColorAndGreaterPowerMinusHandicap As Long
-                lngHeroesOfDifferentColorAndGreaterPowerMinusHandicap = WorksheetFunction.CountIfs(HeroCapabilities.Columns(2), "<>" & HeroCapabilities.Cells(Loop1 + 1, 2), HeroCapabilities.Columns(Loop2 + 6), ">" & HeroCapabilities.Cells(Loop1 + 1, Loop2 + 6) + 1)
-
-                If lngHeroesOfSameColorAndGreaterPower + lngHeroesOfDifferentColorAndGreaterPowerMinusHandicap >= Settings.Cells(2, Loop2 + 6 - 1).Value Then
-                    arrColorSensitive(Loop1, Loop2) = 0
-                Else
-                    arrColorSensitive(Loop1, Loop2) = HeroCapabilities.Cells(Loop1 + 1, Loop2 + 6).Value
-                End If
-            Next Loop2
-        Next Loop1
-        
-        rngColorSensitive.Value = arrColorSensitive
-    
-    
-        Dim rngColorInsensitive As Range
-        Set rngColorInsensitive = .Range(.Cells(2, 16), .Cells(lngLastRow, 16))
-        
-        Dim arrColorInsensitive() As Variant
-        arrColorInsensitive = ConvertRangeToArray(rngColorInsensitive)
-        
-        For Loop1 = LBound(arrColorInsensitive, 1) To UBound(arrColorInsensitive, 1)
-            For Loop2 = LBound(arrColorInsensitive, 2) To UBound(arrColorInsensitive, 2)
-                Dim lngHeroesOfGreaterPower As Long
-                lngHeroesOfGreaterPower = WorksheetFunction.CountIfs(HeroCapabilities.Columns(Loop2 + 15), ">" & HeroCapabilities.Cells(Loop1 + 1, Loop2 + 15))
-
-                If lngHeroesOfGreaterPower >= Settings.Cells(2, Loop2 + 15 - 1).Value Then
-                    arrColorInsensitive(Loop1, Loop2) = 0
-                Else
-                    arrColorInsensitive(Loop1, Loop2) = HeroCapabilities.Cells(Loop1 + 1, Loop2 + 15).Value
-                End If
-            Next Loop2
-        Next Loop1
-        
-        rngColorInsensitive.Value = arrColorInsensitive
-    
-        
-        Dim rngGrandTotal As Range
-        Set rngGrandTotal = .Range(.Cells(2, 7), .Cells(lngLastRow, 17))
-        
-        Dim arrGrandTotal() As Variant
-        arrGrandTotal = ConvertRangeToArray(rngGrandTotal)
-        
-        For Loop1 = LBound(arrGrandTotal, 1) To UBound(arrGrandTotal, 1)
-            arrGrandTotal(Loop1, 11) = 0
-            
-            For Loop2 = 1 To 10
-                arrGrandTotal(Loop1, 11) = arrGrandTotal(Loop1, 11) + arrGrandTotal(Loop1, Loop2)
-            Next Loop2
-        Next Loop1
-        
-        rngGrandTotal.Value = arrGrandTotal
-        
-        
-        Dim rngPurpleRitualMaterial As Range
-        Set rngPurpleRitualMaterial = HeroCapabilities.Range(HeroCapabilities.Cells(2, 18), HeroCapabilities.Cells(lngLastRow, 18))
-        
-        Dim arrPurpleRitualMaterial() As Variant
-        arrPurpleRitualMaterial = ConvertRangeToArray(rngPurpleRitualMaterial)
-                
-        Set rngPurpleRitualMaterial = .Range(.Cells(2, 18), .Cells(lngLastRow, 18))
-        
-        rngPurpleRitualMaterial.Value = arrPurpleRitualMaterial
-        
-        
-        rngEntireTable.Sort Key1:=.Cells(2, lngGrandTotalColumn), Order1:=xlDescending, Key2:=.Cells(2, lngColorColumn), Order2:=xlAscending, Header:=xlYes
-    End With
-
-
     MsgBox "Calculator Updated."
 
 End Sub
@@ -203,7 +89,7 @@ Private Function ConvertRangeToArray(ByVal rngInQuestion As Range) As Variant
 End Function
 
 
-Private Sub MatchHeroContributionsToTeamWithHeroCapabilities()
+Private Sub MatchHeroListingsBetweenSheets()
 
     Dim dictBaseValuesByHeroColor As Scripting.Dictionary
     Set dictBaseValuesByHeroColor = New Scripting.Dictionary
@@ -260,5 +146,201 @@ Private Sub MatchHeroContributionsToTeamWithHeroCapabilities()
             End With
         End If
     Next varkey
+
+End Sub
+
+
+Private Sub SortBothHeroTablesTheSameWay()
+
+    Dim lngLastRow As Long
+    Dim lngLastColumn As Long
+    Dim rngEntireTable As Range
+    
+    Dim lngHeroColumn As Long
+    Dim lngColorColumn As Long
+    
+    
+    With HeroCapabilities
+        lngLastRow = GetLastRowOfSheetInColumn(HeroCapabilities, 1)
+        lngLastColumn = GetLastColumnOfSheetInRow(HeroCapabilities, 1)
+        
+        Set rngEntireTable = .Range(.Cells(1, 1), .Cells(lngLastRow, lngLastColumn))
+        
+        lngHeroColumn = GetCellWithValueInRange(.Rows(1), "Hero", True).Column
+        lngColorColumn = GetCellWithValueInRange(.Rows(1), "Color", True).Column
+        
+        rngEntireTable.Sort Key1:=.Cells(2, lngColorColumn), Order1:=xlAscending, Key2:=.Cells(2, lngHeroColumn), Order2:=xlAscending, Header:=xlYes
+    End With
+
+    
+    With HeroContributionsToTeam
+        lngLastRow = GetLastRowOfSheetInColumn(HeroContributionsToTeam, 1)
+        lngLastColumn = GetLastColumnOfSheetInRow(HeroContributionsToTeam, 1)
+        
+        Set rngEntireTable = .Range(.Cells(1, 1), .Cells(lngLastRow, lngLastColumn))
+        
+        lngHeroColumn = GetCellWithValueInRange(.Rows(1), "Hero", True).Column
+        lngColorColumn = GetCellWithValueInRange(.Rows(1), "Color", True).Column
+        
+        rngEntireTable.Sort Key1:=.Cells(2, lngColorColumn), Order1:=xlAscending, Key2:=.Cells(2, lngHeroColumn), Order2:=xlAscending, Header:=xlYes
+    End With
+
+End Sub
+
+
+Private Sub CalculateColorSensitiveContributions()
+
+    With HeroContributionsToTeam
+        Dim lngHandicap As Long
+        lngHandicap = GetCellWithValueInRange(Settings.Columns(1), "Off-Element Handicap", True).Offset(0, 1).Value
+        
+        Dim lngLastRow As Long
+        lngLastRow = GetLastRowOfSheetInColumn(HeroContributionsToTeam, 1)
+        
+        Dim lng5v5Column As Long
+        lng5v5Column = GetCellWithValueInRange(.Rows(1), "5v5", True).Column
+        
+        Dim rngColorSensitive As Range
+        Set rngColorSensitive = .Range(.Cells(2, 7), .Cells(lngLastRow, lng5v5Column - 1))
+        
+        Dim arrColorSensitive() As Variant
+        arrColorSensitive = ConvertRangeToArray(rngColorSensitive)
+        
+        Dim Loop1 As Long
+        For Loop1 = LBound(arrColorSensitive, 1) To UBound(arrColorSensitive, 1)
+            Dim Loop2 As Long
+            For Loop2 = LBound(arrColorSensitive, 2) To UBound(arrColorSensitive, 2)
+                Dim lngHeroesOfSameColorAndGreaterPower As Long
+                lngHeroesOfSameColorAndGreaterPower = WorksheetFunction.CountIfs(HeroCapabilities.Columns(2), HeroCapabilities.Cells(Loop1 + 1, 2), HeroCapabilities.Columns(Loop2 + 6), ">" & HeroCapabilities.Cells(Loop1 + 1, Loop2 + 6))
+                Dim lngHeroesOfDifferentColorAndGreaterPowerMinusHandicap As Long
+                lngHeroesOfDifferentColorAndGreaterPowerMinusHandicap = WorksheetFunction.CountIfs(HeroCapabilities.Columns(2), "<>" & HeroCapabilities.Cells(Loop1 + 1, 2), HeroCapabilities.Columns(Loop2 + 6), ">" & HeroCapabilities.Cells(Loop1 + 1, Loop2 + 6) + 1)
+
+                If lngHeroesOfSameColorAndGreaterPower + lngHeroesOfDifferentColorAndGreaterPowerMinusHandicap >= Settings.Cells(2, Loop2 + 6 - 1).Value Then
+                    arrColorSensitive(Loop1, Loop2) = 0
+                Else
+                    arrColorSensitive(Loop1, Loop2) = HeroCapabilities.Cells(Loop1 + 1, Loop2 + 6).Value
+                End If
+            Next Loop2
+        Next Loop1
+        
+        rngColorSensitive.Value = arrColorSensitive
+    End With
+
+End Sub
+
+
+Private Sub CalculateColorInsensitiveContributions()
+
+    With HeroContributionsToTeam
+        Dim lngLastRow As Long
+        lngLastRow = GetLastRowOfSheetInColumn(HeroContributionsToTeam, 1)
+        
+        Dim lng5v5Column As Long
+        lng5v5Column = GetCellWithValueInRange(.Rows(1), "5v5", True).Column
+        
+        Dim rngColorInsensitive As Range
+        Set rngColorInsensitive = .Range(.Cells(2, lng5v5Column), .Cells(lngLastRow, lng5v5Column))
+        
+        Dim arrColorInsensitive() As Variant
+        arrColorInsensitive = ConvertRangeToArray(rngColorInsensitive)
+        
+        Dim Loop1 As Long
+        For Loop1 = LBound(arrColorInsensitive, 1) To UBound(arrColorInsensitive, 1)
+            Dim Loop2 As Long
+            For Loop2 = LBound(arrColorInsensitive, 2) To UBound(arrColorInsensitive, 2)
+                Dim lngHeroesOfGreaterPower As Long
+                lngHeroesOfGreaterPower = WorksheetFunction.CountIfs(HeroCapabilities.Columns(Loop2 + 15), ">" & HeroCapabilities.Cells(Loop1 + 1, Loop2 + 15))
+
+                If lngHeroesOfGreaterPower >= Settings.Cells(2, Loop2 + lng5v5Column - 2).Value Then
+                    arrColorInsensitive(Loop1, Loop2) = 0
+                Else
+                    arrColorInsensitive(Loop1, Loop2) = HeroCapabilities.Cells(Loop1 + 1, Loop2 + lng5v5Column - 1).Value
+                End If
+            Next Loop2
+        Next Loop1
+        
+        rngColorInsensitive.Value = arrColorInsensitive
+    End With
+
+End Sub
+
+
+Private Sub CalculateGrandTotalColumn()
+
+    With HeroContributionsToTeam
+        Dim lngLastRow As Long
+        lngLastRow = GetLastRowOfSheetInColumn(HeroContributionsToTeam, 1)
+        
+        Dim lngGrandTotalColumn As Long
+        lngGrandTotalColumn = GetCellWithValueInRange(.Rows(1), "Grand Total", True).Column
+    
+        Dim rngGrandTotal As Range
+        Set rngGrandTotal = .Range(.Cells(2, 7), .Cells(lngLastRow, lngGrandTotalColumn))
+        
+        Dim arrGrandTotal() As Variant
+        arrGrandTotal = ConvertRangeToArray(rngGrandTotal)
+        
+        Dim Loop1 As Long
+        For Loop1 = LBound(arrGrandTotal, 1) To UBound(arrGrandTotal, 1)
+            Dim lngGrandTotalColumnWithinArray As Long
+            lngGrandTotalColumnWithinArray = UBound(arrGrandTotal, 2)
+            
+            arrGrandTotal(Loop1, lngGrandTotalColumnWithinArray) = 0
+            
+            Dim Loop2 As Long
+            For Loop2 = LBound(arrGrandTotal, 2) To lngGrandTotalColumnWithinArray - 1
+                arrGrandTotal(Loop1, lngGrandTotalColumnWithinArray) = arrGrandTotal(Loop1, lngGrandTotalColumnWithinArray) + arrGrandTotal(Loop1, Loop2)
+            Next Loop2
+        Next Loop1
+        
+        rngGrandTotal.Value = arrGrandTotal
+    End With
+
+End Sub
+
+
+Private Sub CopyOverPurpleRitualMaterialColumn()
+            
+    With HeroCapabilities
+        Dim lngLastRow As Long
+        lngLastRow = GetLastRowOfSheetInColumn(HeroCapabilities, 1)
+        
+        Dim lngPurpleRitualMaterialColumn As Long
+        lngPurpleRitualMaterialColumn = GetCellWithValueInRange(.Rows(1), "Purple Ritual", True).Column
+        
+        Dim rngPurpleRitualMaterial As Range
+        Set rngPurpleRitualMaterial = .Range(.Cells(2, lngPurpleRitualMaterialColumn), .Cells(lngLastRow, lngPurpleRitualMaterialColumn))
+    End With
+    
+    Dim arrPurpleRitualMaterial() As Variant
+    arrPurpleRitualMaterial = ConvertRangeToArray(rngPurpleRitualMaterial)
+                
+    With HeroContributionsToTeam
+        Set rngPurpleRitualMaterial = .Range(.Cells(2, lngPurpleRitualMaterialColumn), .Cells(lngLastRow, lngPurpleRitualMaterialColumn))
+    End With
+        
+    rngPurpleRitualMaterial.Value = arrPurpleRitualMaterial
+
+End Sub
+
+
+Private Sub SortHeroContributionsToTeamTableByContribution()
+
+    With HeroContributionsToTeam
+        Dim lngLastRow As Long
+        lngLastRow = GetLastRowOfSheetInColumn(HeroContributionsToTeam, 1)
+        Dim lngLastColumn As Long
+        lngLastColumn = GetLastColumnOfSheetInRow(HeroContributionsToTeam, 1)
+        
+        Dim rngEntireTable As Range
+        Set rngEntireTable = .Range(.Cells(1, 1), .Cells(lngLastRow, lngLastColumn))
+        
+        Dim lngGrandTotalColumn As Long
+        lngGrandTotalColumn = GetCellWithValueInRange(.Rows(1), "Grand Total", True).Column
+        Dim lngColorColumn As Long
+        lngColorColumn = GetCellWithValueInRange(.Rows(1), "Color", True).Column
+        
+        rngEntireTable.Sort Key1:=.Cells(2, lngGrandTotalColumn), Order1:=xlDescending, Key2:=.Cells(2, lngColorColumn), Order2:=xlAscending, Header:=xlYes
+    End With
 
 End Sub
