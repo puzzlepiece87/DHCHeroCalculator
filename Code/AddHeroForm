@@ -29,20 +29,10 @@ Private Sub btnDone_Click()
             lng5v5EligibleColumn = GetCellWithValueInRange(.Rows(1), "5v5 Eligible", True).Column
             Dim lngPurpleRitualMaterialColumn As Long
             lngPurpleRitualMaterialColumn = GetCellWithValueInRange(.Rows(1), "Purple Ritual", True).Column
-        
-                    
+                            
             .Cells(lngLastRow + 1, lngHeroColumn).Value = AddHeroForm.textboxHeroName.Value
-            
-            If AddHeroForm.radioFire = True Then .Cells(lngLastRow + 1, lngColorColumn).Value = 1
-            If AddHeroForm.radioWater = True Then .Cells(lngLastRow + 1, lngColorColumn).Value = 2
-            If AddHeroForm.radioNature = True Then .Cells(lngLastRow + 1, lngColorColumn).Value = 3
-            If AddHeroForm.radioLight = True Then .Cells(lngLastRow + 1, lngColorColumn).Value = 4
-            If AddHeroForm.radioDark = True Then .Cells(lngLastRow + 1, lngColorColumn).Value = 5
-            
-            If AddHeroForm.radioBestInGame = True Then .Cells(lngLastRow + 1, lngOverallRatingColumn).Value = 4
-            If AddHeroForm.radioMustHave = True Then .Cells(lngLastRow + 1, lngOverallRatingColumn).Value = 3
-            If AddHeroForm.radioKeepIt = True Then .Cells(lngLastRow + 1, lngOverallRatingColumn).Value = 2
-            If AddHeroForm.radioNeither = True Then .Cells(lngLastRow + 1, lngOverallRatingColumn).Value = 0
+            .Cells(lngLastRow + 1, lngColorColumn).Value = GetHeroColor(AddHeroForm)
+            .Cells(lngLastRow + 1, lngOverallRatingColumn).Value = GetHeroOverallRating(AddHeroForm)
             
             If AddHeroForm.textboxLowestObservedRating.Value <> vbNullString Then
                 .Cells(lngLastRow + 1, lngLowestObservedRatingColumn).Value = AddHeroForm.textboxLowestObservedRating.Value
@@ -52,7 +42,7 @@ Private Sub btnDone_Click()
             
             Dim lngLowestObservedRating As Long
             lngLowestObservedRating = WorksheetFunction.Min(.Cells(lngLastRow + 1, lngOverallRatingColumn).Value, .Cells(lngLastRow + 1, lngLowestObservedRatingColumn).Value)
-            .Range(.Cells(lngLastRow + 1, 7), .Cells(lngLastRow + 1, 15)).Value = lngLowestObservedRating
+            .Range(.Cells(lngLastRow + 1, 7), .Cells(lngLastRow + 1, lng5v5Column - 1)).Value = lngLowestObservedRating
             
             If AddHeroForm.chkbox5v5Competitor = True Then
                 .Cells(lngLastRow + 1, lng5v5EligibleColumn).Value = "Y"
@@ -158,18 +148,39 @@ Private Function GetCellWithValueInRange(ByVal rngToSearch As Range, ByVal strVa
 End Function
 
 
-Private Function ConvertRangeToArray(ByVal rngInQuestion As Range) As Variant
+Private Function GetHeroColor(ByVal AddHeroForm As ufAddHeroForm) As Long
 
-    Dim arrRangeToArray() As Variant
-    With rngInQuestion
-        If .Cells.Count = 1 Then
-            ReDim arrRangeToArray(1 To 1, 1 To 1)
-            arrRangeToArray(1, 1) = .Cells(1, 1).Value
-        Else
-            arrRangeToArray = .Value
-        End If
-    End With
+    Select Case True
+        Case AddHeroForm.radioFire
+            GetHeroColor = 1
+        Case AddHeroForm.radioWater
+            GetHeroColor = 2
+        Case AddHeroForm.radioNature
+            GetHeroColor = 3
+        Case AddHeroForm.radioLight
+            GetHeroColor = 4
+        Case AddHeroForm.radioDark
+            GetHeroColor = 5
+        Case Else
+            GetHeroColor = 0
+    End Select
 
-    ConvertRangeToArray = arrRangeToArray
+End Function
+
+
+Private Function GetHeroOverallRating(ByVal AddHeroForm As ufAddHeroForm) As Long
+
+    Select Case True
+        Case AddHeroForm.radioBestInGame
+            GetHeroOverallRating = 4
+        Case AddHeroForm.radioMustHave
+            GetHeroOverallRating = 3
+        Case AddHeroForm.radioKeepIt
+            GetHeroOverallRating = 2
+        Case AddHeroForm.radioNeither
+            GetHeroOverallRating = 0
+        Case Else
+            GetHeroOverallRating = 0
+    End Select
 
 End Function
