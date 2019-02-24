@@ -1,6 +1,7 @@
 v2.00
 Added integration with Trouble's DHC Tier List with Trouble's approval - thanks Trouble!
 Added King of Fighters column, removed Bull Demon, Adventure, and Farming columns since all can be done with mid-strength heroes
+Changed element indicators (1-5) to their words (Fire, Water, Nature, Light, Dark) to avoid confusion
 
 v1.20
 Added Outer Harbringer column and made it much easier to add new bosses/game modes to the program in the future
