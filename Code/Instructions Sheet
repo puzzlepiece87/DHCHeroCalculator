@@ -3,6 +3,9 @@ Option Explicit
 
 Private Sub AddNewHero_Click()
 
+    HeroContributionsToTeam.AutoFilterMode = False
+    HeroCapabilities.AutoFilterMode = False
+    
     Dim AddHeroForm As ufAddHeroForm
     Set AddHeroForm = New ufAddHeroForm
     AddHeroForm.Show
@@ -12,6 +15,11 @@ End Sub
 
 Private Sub UpdateCalculator_Click()
 
+    Application.ScreenUpdating = False
+    
+    HeroContributionsToTeam.AutoFilterMode = False
+    HeroCapabilities.AutoFilterMode = False
+
     MatchHeroListingsBetweenSheets
     SortBothHeroTablesTheSameWay
     CalculateColorSensitiveContributions
@@ -20,7 +28,32 @@ Private Sub UpdateCalculator_Click()
     CopyOverPurpleRitualMaterialColumn
     SortHeroContributionsToTeamTableByContribution
         
+    Application.ScreenUpdating = True
+    
     MsgBox "Calculator Updated."
+
+End Sub
+
+
+Private Sub ImportData_Click()
+
+    HeroContributionsToTeam.AutoFilterMode = False
+    HeroCapabilities.AutoFilterMode = False
+    
+    DownloadTroubleTierListFileFromGoogleSheets
+    
+    Dim wbkTroubleTierList As Workbook
+    Set wbkTroubleTierList = GetTroubleTierListWorkbook
+    
+    OverwriteExistingDataWithConvertedData wbkTroubleTierList
+    
+    Application.DisplayAlerts = False
+    wbkTroubleTierList.Close
+    Application.DisplayAlerts = True
+    
+    DeleteTroubleTierListFile
+        
+    MsgBox "Trouble's DHC Tier List data imported."
 
 End Sub
 
@@ -57,9 +90,9 @@ Private Function GetCellWithValueInRange(ByVal rngToSearch As Range, ByVal strVa
 
     Dim rngFound As Range
     If boolWholeValue = True Then
-        Set rngFound = rngToSearch.Find(What:=strValueToFind, LookAt:=xlWhole)
+        Set rngFound = rngToSearch.Find(What:=strValueToFind, Lookat:=xlWhole)
     Else
-        Set rngFound = rngToSearch.Find(What:=strValueToFind, LookAt:=xlPart)
+        Set rngFound = rngToSearch.Find(What:=strValueToFind, Lookat:=xlPart)
     End If
 
     If rngFound Is Nothing Then
@@ -91,13 +124,13 @@ End Function
 
 Private Sub MatchHeroListingsBetweenSheets()
 
-    Dim dictBaseValuesByHeroColor As Scripting.Dictionary
-    Set dictBaseValuesByHeroColor = New Scripting.Dictionary
-    dictBaseValuesByHeroColor.CompareMode = TextCompare
+    Dim dictHeroesOnCapabilitiesSheet As Scripting.Dictionary
+    Set dictHeroesOnCapabilitiesSheet = New Scripting.Dictionary
+    dictHeroesOnCapabilitiesSheet.CompareMode = TextCompare
     
-    Dim dictHeroesAlreadyPresent As Scripting.Dictionary
-    Set dictHeroesAlreadyPresent = New Scripting.Dictionary
-    dictHeroesAlreadyPresent.CompareMode = TextCompare
+    Dim dictHeroesOnContributionsSheet As Scripting.Dictionary
+    Set dictHeroesOnContributionsSheet = New Scripting.Dictionary
+    dictHeroesOnContributionsSheet.CompareMode = TextCompare
     
     Dim lngLastRow As Long
     Dim rngBaseValues As Range
@@ -107,11 +140,11 @@ Private Sub MatchHeroListingsBetweenSheets()
     
     With HeroCapabilities
         lngLastRow = GetLastRowOfSheetInColumn(HeroCapabilities, 1)
-        Set rngBaseValues = .Range(.Cells(1, 1), .Cells(lngLastRow, 5))
+        Set rngBaseValues = .Range(.Cells(1, 1), .Cells(lngLastRow, 2))
         arrBaseValues = ConvertRangeToArray(rngBaseValues)
     
         For Loop1 = LBound(arrBaseValues, 1) To UBound(arrBaseValues, 1)
-            dictBaseValuesByHeroColor.Add arrBaseValues(Loop1, 1) & "|" & arrBaseValues(Loop1, 2), arrBaseValues(Loop1, 4) & arrBaseValues(Loop1, 5)
+            dictHeroesOnCapabilitiesSheet.Add arrBaseValues(Loop1, 1) & "|" & arrBaseValues(Loop1, 2), Loop1
         Next Loop1
     End With
     
@@ -121,31 +154,29 @@ Private Sub MatchHeroListingsBetweenSheets()
         arrBaseValues = ConvertRangeToArray(rngBaseValues)
     
         For Loop1 = LBound(arrBaseValues, 1) To UBound(arrBaseValues, 1)
-            dictHeroesAlreadyPresent.Add arrBaseValues(Loop1, 1) & "|" & arrBaseValues(Loop1, 2), Loop1
+            dictHeroesOnContributionsSheet.Add arrBaseValues(Loop1, 1) & "|" & arrBaseValues(Loop1, 2), Loop1
         Next Loop1
     End With
 
-    Dim varkey As Variant
-    For Each varkey In dictBaseValuesByHeroColor.Keys
-        If dictHeroesAlreadyPresent.Exists(varkey) = False Then
+    Dim varKey As Variant
+    For Each varKey In dictHeroesOnCapabilitiesSheet.Keys
+        If dictHeroesOnContributionsSheet.Exists(varKey) = False Then
             With HeroContributionsToTeam
                 lngLastRow = GetLastRowOfSheetInColumn(HeroContributionsToTeam, 1)
             
-                .Cells(lngLastRow + 1, 1).Value = Left(varkey, InStr(1, varkey, "|", vbTextCompare) - 1)
-                .Cells(lngLastRow + 1, 2).Value = Right(varkey, InStrRev(varkey, "|", vbTextCompare) + 1)
-                .Cells(lngLastRow + 1, 4).Value = Left(dictBaseValuesByHeroColor.Item(varkey), 1)
-                .Cells(lngLastRow + 1, 5).Value = Right(dictBaseValuesByHeroColor.Item(varkey), 1)
+                .Cells(lngLastRow + 1, 1).Value = Left(varKey, InStr(1, varKey, "|", vbTextCompare) - 1)
+                .Cells(lngLastRow + 1, 2).Value = Right(varKey, Len(varKey) - InStrRev(varKey, "|", -1, vbTextCompare))
             End With
         End If
-    Next varkey
+    Next varKey
 
-    For Each varkey In dictHeroesAlreadyPresent.Keys
-        If dictBaseValuesByHeroColor.Exists(varkey) = False Then
+    For Each varKey In dictHeroesOnContributionsSheet.Keys
+        If dictHeroesOnCapabilitiesSheet.Exists(varKey) = False Then
             With HeroContributionsToTeam
-                .Rows(dictHeroesAlreadyPresent.Item(varkey)).EntireRow.Delete
+                .Rows(dictHeroesOnContributionsSheet.Item(varKey)).EntireRow.Delete
             End With
         End If
-    Next varkey
+    Next varKey
 
 End Sub
 
@@ -172,6 +203,17 @@ Private Sub SortBothHeroTablesTheSameWay()
         rngEntireTable.Sort Key1:=.Cells(2, lngColorColumn), Order1:=xlAscending, Key2:=.Cells(2, lngHeroColumn), Order2:=xlAscending, Header:=xlYes
     End With
 
+    With HeroCapabilities.Sort
+        .SortFields.Clear
+        .SortFields.Add Key:=HeroCapabilities.Cells(2, lngColorColumn), SortOn:=xlSortOnValues, Order:=xlAscending, CustomOrder:="Fire,Water,Nature,Light,Dark", DataOption:=xlSortNormal
+        .SortFields.Add Key:=HeroCapabilities.Cells(2, lngHeroColumn), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+        .SetRange rngEntireTable
+        .Header = xlYes
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
+    End With
+
     
     With HeroContributionsToTeam
         lngLastRow = GetLastRowOfSheetInColumn(HeroContributionsToTeam, 1)
@@ -182,7 +224,18 @@ Private Sub SortBothHeroTablesTheSameWay()
         lngHeroColumn = GetCellWithValueInRange(.Rows(1), "Hero", True).Column
         lngColorColumn = GetCellWithValueInRange(.Rows(1), "Color", True).Column
         
-        rngEntireTable.Sort Key1:=.Cells(2, lngColorColumn), Order1:=xlAscending, Key2:=.Cells(2, lngHeroColumn), Order2:=xlAscending, Header:=xlYes
+        'rngEntireTable.Sort Key1:=.Cells(2, lngColorColumn), Order1:=xlAscending, Key2:=.Cells(2, lngHeroColumn), Order2:=xlAscending, Header:=xlYes
+    End With
+
+    With HeroContributionsToTeam.Sort
+        .SortFields.Clear
+        .SortFields.Add Key:=HeroContributionsToTeam.Cells(2, lngColorColumn), SortOn:=xlSortOnValues, Order:=xlAscending, CustomOrder:="Fire,Water,Nature,Light,Dark", DataOption:=xlSortNormal
+        .SortFields.Add Key:=HeroContributionsToTeam.Cells(2, lngHeroColumn), SortOn:=xlSortOnValues, Order:=xlAscending, DataOption:=xlSortNormal
+        .SetRange rngEntireTable
+        .Header = xlYes
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
     End With
 
 End Sub
@@ -201,7 +254,7 @@ Private Sub CalculateColorSensitiveContributions()
         lng5v5Column = GetCellWithValueInRange(.Rows(1), "5v5", True).Column
         
         Dim rngColorSensitive As Range
-        Set rngColorSensitive = .Range(.Cells(2, 7), .Cells(lngLastRow, lng5v5Column - 1))
+        Set rngColorSensitive = .Range(.Cells(2, 4), .Cells(lngLastRow, lng5v5Column - 1))
         
         Dim arrColorSensitive() As Variant
         arrColorSensitive = ConvertRangeToArray(rngColorSensitive)
@@ -211,14 +264,14 @@ Private Sub CalculateColorSensitiveContributions()
             Dim Loop2 As Long
             For Loop2 = LBound(arrColorSensitive, 2) To UBound(arrColorSensitive, 2)
                 Dim lngHeroesOfSameColorAndGreaterPower As Long
-                lngHeroesOfSameColorAndGreaterPower = WorksheetFunction.CountIfs(HeroCapabilities.Columns(2), HeroCapabilities.Cells(Loop1 + 1, 2), HeroCapabilities.Columns(Loop2 + 6), ">" & HeroCapabilities.Cells(Loop1 + 1, Loop2 + 6))
+                lngHeroesOfSameColorAndGreaterPower = WorksheetFunction.CountIfs(HeroCapabilities.Columns(2), HeroCapabilities.Cells(Loop1 + 1, 2), HeroCapabilities.Columns(Loop2 + 3), ">" & HeroCapabilities.Cells(Loop1 + 1, Loop2 + 3))
                 Dim lngHeroesOfDifferentColorAndGreaterPowerMinusHandicap As Long
-                lngHeroesOfDifferentColorAndGreaterPowerMinusHandicap = WorksheetFunction.CountIfs(HeroCapabilities.Columns(2), "<>" & HeroCapabilities.Cells(Loop1 + 1, 2), HeroCapabilities.Columns(Loop2 + 6), ">" & HeroCapabilities.Cells(Loop1 + 1, Loop2 + 6) + 1)
+                lngHeroesOfDifferentColorAndGreaterPowerMinusHandicap = WorksheetFunction.CountIfs(HeroCapabilities.Columns(2), "<>" & HeroCapabilities.Cells(Loop1 + 1, 2), HeroCapabilities.Columns(Loop2 + 3), ">" & HeroCapabilities.Cells(Loop1 + 1, Loop2 + 3) + lngHandicap)
 
                 If lngHeroesOfSameColorAndGreaterPower + lngHeroesOfDifferentColorAndGreaterPowerMinusHandicap >= Settings.Cells(2, Loop2 + 6 - 1).Value Then
                     arrColorSensitive(Loop1, Loop2) = 0
                 Else
-                    arrColorSensitive(Loop1, Loop2) = HeroCapabilities.Cells(Loop1 + 1, Loop2 + 6).Value
+                    arrColorSensitive(Loop1, Loop2) = HeroCapabilities.Cells(Loop1 + 1, Loop2 + 3).Value
                 End If
             Next Loop2
         Next Loop1
@@ -238,6 +291,9 @@ Private Sub CalculateColorInsensitiveContributions()
         Dim lng5v5Column As Long
         lng5v5Column = GetCellWithValueInRange(.Rows(1), "5v5", True).Column
         
+        Dim lngSettings5v5Column As Long
+        lngSettings5v5Column = GetCellWithValueInRange(Settings.Rows(1), "5v5", True).Column
+        
         Dim rngColorInsensitive As Range
         Set rngColorInsensitive = .Range(.Cells(2, lng5v5Column), .Cells(lngLastRow, lng5v5Column))
         
@@ -246,17 +302,14 @@ Private Sub CalculateColorInsensitiveContributions()
         
         Dim Loop1 As Long
         For Loop1 = LBound(arrColorInsensitive, 1) To UBound(arrColorInsensitive, 1)
-            Dim Loop2 As Long
-            For Loop2 = LBound(arrColorInsensitive, 2) To UBound(arrColorInsensitive, 2)
-                Dim lngHeroesOfGreaterPower As Long
-                lngHeroesOfGreaterPower = WorksheetFunction.CountIfs(HeroCapabilities.Columns(Loop2 + 15), ">" & HeroCapabilities.Cells(Loop1 + 1, Loop2 + 15))
+            Dim lngHeroesOfGreaterPower As Long
+            lngHeroesOfGreaterPower = WorksheetFunction.CountIfs(HeroCapabilities.Columns(lng5v5Column), ">" & HeroCapabilities.Cells(Loop1 + 1, lng5v5Column))
 
-                If lngHeroesOfGreaterPower >= Settings.Cells(2, Loop2 + lng5v5Column - 2).Value Then
-                    arrColorInsensitive(Loop1, Loop2) = 0
-                Else
-                    arrColorInsensitive(Loop1, Loop2) = HeroCapabilities.Cells(Loop1 + 1, Loop2 + lng5v5Column - 1).Value
-                End If
-            Next Loop2
+            If lngHeroesOfGreaterPower >= Settings.Cells(2, lngSettings5v5Column).Value Then
+                arrColorInsensitive(Loop1, 1) = 0
+            Else
+                arrColorInsensitive(Loop1, 1) = HeroCapabilities.Cells(Loop1 + 1, lng5v5Column).Value
+            End If
         Next Loop1
         
         rngColorInsensitive.Value = arrColorInsensitive
@@ -275,7 +328,7 @@ Private Sub CalculateGrandTotalColumn()
         lngGrandTotalColumn = GetCellWithValueInRange(.Rows(1), "Grand Total", True).Column
     
         Dim rngGrandTotal As Range
-        Set rngGrandTotal = .Range(.Cells(2, 7), .Cells(lngLastRow, lngGrandTotalColumn))
+        Set rngGrandTotal = .Range(.Cells(2, 4), .Cells(lngLastRow, lngGrandTotalColumn))
         
         Dim arrGrandTotal() As Variant
         arrGrandTotal = ConvertRangeToArray(rngGrandTotal)
@@ -316,7 +369,7 @@ Private Sub CopyOverPurpleRitualMaterialColumn()
     arrPurpleRitualMaterial = ConvertRangeToArray(rngPurpleRitualMaterial)
                 
     With HeroContributionsToTeam
-        Set rngPurpleRitualMaterial = .Range(.Cells(2, lngPurpleRitualMaterialColumn), .Cells(lngLastRow, lngPurpleRitualMaterialColumn))
+        Set rngPurpleRitualMaterial = .Range(.Cells(2, lngPurpleRitualMaterialColumn + 1), .Cells(lngLastRow, lngPurpleRitualMaterialColumn + 1))
     End With
         
     rngPurpleRitualMaterial.Value = arrPurpleRitualMaterial
@@ -340,7 +393,277 @@ Private Sub SortHeroContributionsToTeamTableByContribution()
         Dim lngColorColumn As Long
         lngColorColumn = GetCellWithValueInRange(.Rows(1), "Color", True).Column
         
-        rngEntireTable.Sort Key1:=.Cells(2, lngGrandTotalColumn), Order1:=xlDescending, Key2:=.Cells(2, lngColorColumn), Order2:=xlAscending, Header:=xlYes
+        'rngEntireTable.Sort Key1:=.Cells(2, lngGrandTotalColumn), Order1:=xlDescending, Key2:=.Cells(2, lngColorColumn), Order2:=xlAscending, Header:=xlYes
+    End With
+    
+    With HeroContributionsToTeam.Sort
+        .SortFields.Clear
+        .SortFields.Add Key:=HeroContributionsToTeam.Cells(2, lngGrandTotalColumn), SortOn:=xlSortOnValues, Order:=xlDescending, DataOption:=xlSortNormal
+        .SortFields.Add Key:=HeroContributionsToTeam.Cells(2, lngColorColumn), SortOn:=xlSortOnValues, Order:=xlAscending, CustomOrder:="Fire,Water,Nature,Light,Dark", DataOption:=xlSortNormal
+        .SetRange rngEntireTable
+        .Header = xlYes
+        .Orientation = xlTopToBottom
+        .SortMethod = xlPinYin
+        .Apply
     End With
 
 End Sub
+
+
+Private Sub DownloadTroubleTierListFileFromGoogleSheets()
+
+    Dim strURL As String
+    strURL = GetCellWithValueInRange(Settings.Columns(1), "Trouble's Tier List", True).Offset(0, 1).Value
+    
+    Dim XMLHTTP As MSXML2.XMLHTTP60
+    Set XMLHTTP = New MSXML2.XMLHTTP60
+    
+    With XMLHTTP
+        .Open "Get", strURL, False
+        .send
+        
+        'Wait for request to finish
+        Do While .readyState <> 4
+            DoEvents
+        Loop
+        
+        Dim byteResponse() As Byte
+        byteResponse = .responseBody
+    End With
+
+    Dim Shell As IWshRuntimeLibrary.WshShell
+    Set Shell = New IWshRuntimeLibrary.WshShell
+    
+    Dim strSaveLocation As String
+    strSaveLocation = Shell.SpecialFolders("Desktop") & Application.PathSeparator & "Trouble DHC Tier List.xlsx"
+    
+    Dim FSO As Scripting.FileSystemObject
+    Set FSO = New Scripting.FileSystemObject
+    
+    If FSO.FileExists(strSaveLocation) = True Then FSO.DeleteFile strSaveLocation
+    
+    Dim Int1 As Integer
+    Int1 = FreeFile()
+    Open strSaveLocation For Binary As #Int1
+    Put #Int1, , byteResponse
+    Close #Int1
+    
+    Set XMLHTTP = Nothing
+
+End Sub
+
+
+Private Function GetTroubleTierListWorkbook() As Workbook
+
+    Dim Shell As IWshRuntimeLibrary.WshShell
+    Set Shell = New IWshRuntimeLibrary.WshShell
+    
+    Dim strSaveLocation As String
+    strSaveLocation = Shell.SpecialFolders("Desktop") & Application.PathSeparator & "Trouble DHC Tier List.xlsx"
+    
+    Workbooks.Open strSaveLocation
+    Set GetTroubleTierListWorkbook = ActiveWorkbook
+
+End Function
+
+
+Private Sub OverwriteExistingDataWithConvertedData(ByVal wbkTroubleTierList As Workbook)
+
+    Dim arrHeroCapabilitiesTable() As Variant
+    arrHeroCapabilitiesTable = GetHeroCapabilitiesTableAsArray
+
+    With wbkTroubleTierList
+        Dim shtLoop As Worksheet
+        For Each shtLoop In .Worksheets
+            Dim arrTroubleTierListTable() As Variant
+            arrTroubleTierListTable = GetTroubleTierListTableAsArray(shtLoop)
+            
+            CopyValuesToHeroCapabilities arrTroubleTierListTable, arrHeroCapabilitiesTable
+        Next shtLoop
+    End With
+
+End Sub
+
+
+Private Sub DeleteTroubleTierListFile()
+
+    Dim Shell As IWshRuntimeLibrary.WshShell
+    Set Shell = New IWshRuntimeLibrary.WshShell
+    
+    Dim strSaveLocation As String
+    strSaveLocation = Shell.SpecialFolders("Desktop") & Application.PathSeparator & "Trouble DHC Tier List.xlsx"
+    
+    Dim FSO As Scripting.FileSystemObject
+    Set FSO = New Scripting.FileSystemObject
+    
+    If FSO.FileExists(strSaveLocation) = True Then FSO.DeleteFile strSaveLocation
+
+End Sub
+
+
+Private Function GetHeroCapabilitiesTableAsArray() As Variant
+
+    With HeroCapabilities
+        Dim lngLastRow As Long
+        lngLastRow = GetLastRowOfSheetInColumn(HeroCapabilities, 1)
+        Dim lngLastColumn As Long
+        lngLastColumn = GetLastColumnOfSheetInRow(HeroCapabilities, 1)
+        
+        Dim arrTable() As Variant
+        arrTable = ConvertRangeToArray(.Range(.Cells(1, 1), .Cells(lngLastRow, lngLastColumn)))
+    End With
+
+    GetHeroCapabilitiesTableAsArray = arrTable
+
+End Function
+
+
+Private Function GetTroubleTierListTableAsArray(ByVal shtLoop As Worksheet) As Variant
+
+    With shtLoop
+        Dim rngTopLeftCorner As Range
+        Set rngTopLeftCorner = shtLoop.Cells.Find(What:="Hero", Lookat:=xlWhole)
+        
+        Dim lngLastRow As Long
+        lngLastRow = GetLastRowOfSheetInColumn(shtLoop, rngTopLeftCorner.Column)
+        Dim lngLastColumn As Long
+        lngLastColumn = GetLastColumnOfSheetInRow(shtLoop, rngTopLeftCorner.Row)
+        
+        Dim arrTable() As Variant
+        arrTable = ConvertRangeToArray(.Range(.Cells(rngTopLeftCorner.Row, rngTopLeftCorner.Column), .Cells(lngLastRow, lngLastColumn)))
+    End With
+
+    GetTroubleTierListTableAsArray = arrTable
+
+End Function
+
+
+Private Sub CopyValuesToHeroCapabilities(ByVal arrTroubleTierListTable As Variant, ByRef arrHeroCapabilitiesTable As Variant)
+
+    Dim dictTierListTableColumnsByHeader As Scripting.Dictionary
+    Set dictTierListTableColumnsByHeader = GetDictTierListTableColumnsByHeader(arrTroubleTierListTable)
+    
+    Dim dictHeroCapabilitiesColumnsByHeader As Scripting.Dictionary
+    Set dictHeroCapabilitiesColumnsByHeader = GetDictHeroCapabilitiesColumnsByHeader(arrHeroCapabilitiesTable)
+    
+    Dim dictHeroCapabilitiesHeadersByTierListHeaders As Scripting.Dictionary
+    Set dictHeroCapabilitiesHeadersByTierListHeaders = GetDictHeroCapabilitiesHeadersByTierListHeaders
+    
+    Dim dictHeroCapabilitiesNumberByTierListLetterGrade As Scripting.Dictionary
+    Set dictHeroCapabilitiesNumberByTierListLetterGrade = GetDictHeroCapabilitiesNumberByTierListLetterGrade
+    
+    Dim lngFamilyColumn As Long
+    lngFamilyColumn = dictTierListTableColumnsByHeader("Family")
+    Dim lngElementColumn As Long
+    lngElementColumn = dictTierListTableColumnsByHeader("Element")
+    Dim lngHeroColumn As Long
+    lngHeroColumn = dictHeroCapabilitiesColumnsByHeader("Hero")
+    Dim lngColorColumn As Long
+    lngColorColumn = dictHeroCapabilitiesColumnsByHeader("Color")
+    
+    Dim lngHeroCapabilitiesRow As Long
+    Dim lngTroubleTierListRow As Long
+
+    For lngHeroCapabilitiesRow = LBound(arrHeroCapabilitiesTable, 1) To UBound(arrHeroCapabilitiesTable, 1)
+        For lngTroubleTierListRow = LBound(arrTroubleTierListTable, 1) To UBound(arrTroubleTierListTable, 1)
+            If arrHeroCapabilitiesTable(lngHeroCapabilitiesRow, lngHeroColumn) = arrTroubleTierListTable(lngTroubleTierListRow, lngFamilyColumn) And arrHeroCapabilitiesTable(lngHeroCapabilitiesRow, lngColorColumn) = arrTroubleTierListTable(lngTroubleTierListRow, lngElementColumn) Then
+                Dim varKey As Variant
+                For Each varKey In dictTierListTableColumnsByHeader.Keys
+                    If dictHeroCapabilitiesNumberByTierListLetterGrade.Exists(arrTroubleTierListTable(lngTroubleTierListRow, dictTierListTableColumnsByHeader(varKey))) = True Then
+                        arrHeroCapabilitiesTable(lngHeroCapabilitiesRow, dictHeroCapabilitiesColumnsByHeader(dictHeroCapabilitiesHeadersByTierListHeaders(varKey))) = dictHeroCapabilitiesNumberByTierListLetterGrade(arrTroubleTierListTable(lngTroubleTierListRow, dictTierListTableColumnsByHeader(varKey)))
+                    Else
+                        arrHeroCapabilitiesTable(lngHeroCapabilitiesRow, dictHeroCapabilitiesColumnsByHeader(dictHeroCapabilitiesHeadersByTierListHeaders(varKey))) = arrTroubleTierListTable(lngTroubleTierListRow, dictTierListTableColumnsByHeader(varKey))
+                    End If
+                Next varKey
+            End If
+        Next lngTroubleTierListRow
+    Next lngHeroCapabilitiesRow
+    
+    HeroCapabilities.Cells(1, 1).Resize(UBound(arrHeroCapabilitiesTable, 1), UBound(arrHeroCapabilitiesTable, 2)).Value = arrHeroCapabilitiesTable
+    
+End Sub
+
+
+Private Function GetDictTierListTableColumnsByHeader(ByVal arrTroubleTierListTable As Variant) As Scripting.Dictionary
+
+    Dim dictTierListTableColumnsByHeader As Scripting.Dictionary
+    Set dictTierListTableColumnsByHeader = New Scripting.Dictionary
+    dictTierListTableColumnsByHeader.CompareMode = TextCompare
+
+    Dim Loop1 As Long
+    For Loop1 = LBound(arrTroubleTierListTable, 2) To UBound(arrTroubleTierListTable, 2)
+        Select Case arrTroubleTierListTable(1, Loop1)
+            Case "Family", "Element", "ED11", "SW10", "OH", "UB", "KOF", "Coop", "AO", "AD", "5v5", "GWO", "GWD"
+                dictTierListTableColumnsByHeader.Add arrTroubleTierListTable(1, Loop1), Loop1
+        End Select
+    Next Loop1
+
+    Set GetDictTierListTableColumnsByHeader = dictTierListTableColumnsByHeader
+
+End Function
+
+
+Private Function GetDictHeroCapabilitiesColumnsByHeader(ByVal arrHeroCapabilitiesTable As Variant) As Scripting.Dictionary
+
+    Dim dictHeroCapabilitiesColumnsByHeader As Scripting.Dictionary
+    Set dictHeroCapabilitiesColumnsByHeader = New Scripting.Dictionary
+    dictHeroCapabilitiesColumnsByHeader.CompareMode = TextCompare
+
+    Dim Loop1 As Long
+    For Loop1 = LBound(arrHeroCapabilitiesTable, 2) To UBound(arrHeroCapabilitiesTable, 2)
+        Select Case arrHeroCapabilitiesTable(1, Loop1)
+            Case "Hero", "Color", "ED", "SW", "OH", "Blitz", "KoF", "Baldragor", "A Offense", "A Defense", "5v5", "GW Offense", "GW Defense"
+                dictHeroCapabilitiesColumnsByHeader.Add arrHeroCapabilitiesTable(1, Loop1), Loop1
+        End Select
+    Next Loop1
+    
+    Set GetDictHeroCapabilitiesColumnsByHeader = dictHeroCapabilitiesColumnsByHeader
+
+End Function
+
+
+Private Function GetDictHeroCapabilitiesHeadersByTierListHeaders() As Scripting.Dictionary
+
+    Dim dictHeroCapabilitiesHeadersByTierListHeaders As Scripting.Dictionary
+    Set dictHeroCapabilitiesHeadersByTierListHeaders = New Scripting.Dictionary
+    dictHeroCapabilitiesHeadersByTierListHeaders.CompareMode = TextCompare
+    
+    dictHeroCapabilitiesHeadersByTierListHeaders.Add "Family", "Hero"
+    dictHeroCapabilitiesHeadersByTierListHeaders.Add "Element", "Color"
+    dictHeroCapabilitiesHeadersByTierListHeaders.Add "ED11", "ED"
+    dictHeroCapabilitiesHeadersByTierListHeaders.Add "SW10", "SW"
+    dictHeroCapabilitiesHeadersByTierListHeaders.Add "OH", "OH"
+    dictHeroCapabilitiesHeadersByTierListHeaders.Add "UB", "Blitz"
+    dictHeroCapabilitiesHeadersByTierListHeaders.Add "KOF", "KoF"
+    dictHeroCapabilitiesHeadersByTierListHeaders.Add "Coop", "Baldragor"
+    dictHeroCapabilitiesHeadersByTierListHeaders.Add "AO", "A Offense"
+    dictHeroCapabilitiesHeadersByTierListHeaders.Add "AD", "A Defense"
+    dictHeroCapabilitiesHeadersByTierListHeaders.Add "5v5", "5v5"
+    dictHeroCapabilitiesHeadersByTierListHeaders.Add "GWO", "GW Offense"
+    dictHeroCapabilitiesHeadersByTierListHeaders.Add "GWD", "GW Defense"
+    
+    Set GetDictHeroCapabilitiesHeadersByTierListHeaders = dictHeroCapabilitiesHeadersByTierListHeaders
+
+End Function
+
+
+Private Function GetDictHeroCapabilitiesNumberByTierListLetterGrade() As Scripting.Dictionary
+
+    Dim dictHeroCapabilitiesNumberByTierListLetterGrade As Scripting.Dictionary
+    Set dictHeroCapabilitiesNumberByTierListLetterGrade = New Scripting.Dictionary
+    dictHeroCapabilitiesNumberByTierListLetterGrade.CompareMode = TextCompare
+
+    dictHeroCapabilitiesNumberByTierListLetterGrade.Add vbNullString, 0
+    dictHeroCapabilitiesNumberByTierListLetterGrade.Add "N/A", 0
+    dictHeroCapabilitiesNumberByTierListLetterGrade.Add "F", 0
+    dictHeroCapabilitiesNumberByTierListLetterGrade.Add "D", 1
+    dictHeroCapabilitiesNumberByTierListLetterGrade.Add "C", 2
+    dictHeroCapabilitiesNumberByTierListLetterGrade.Add "B", 3
+    dictHeroCapabilitiesNumberByTierListLetterGrade.Add "A", 4
+    dictHeroCapabilitiesNumberByTierListLetterGrade.Add "S", 5
+    dictHeroCapabilitiesNumberByTierListLetterGrade.Add "S+", 6
+    dictHeroCapabilitiesNumberByTierListLetterGrade.Add "SS", 7
+    
+    Set GetDictHeroCapabilitiesNumberByTierListLetterGrade = dictHeroCapabilitiesNumberByTierListLetterGrade
+
+End Function
