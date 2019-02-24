@@ -3,6 +3,9 @@
 I'm getting warnings about macros. Is this calculator trying to execute malicious code on my computer?
 * No, but malicious macros can be attached to Microsoft Office documents, so I'm glad you're suspicious. To alleviate concerns, all of the code included in the calculator is saved here separately in project files for your review. In addition, you can simply choose not to enable macros and review the code directly in the program by pushing Alt-F11 to bring up the VBE Editor. Or, finally, you can simply convert the file to .xlsx format, stripping it of the code, and use the Example Formulas to update the calculator by hand.  
 
+The program is trying to connect to the internet after I pushed the Import Data button. Is it phoning home with my personal information?
+* No, but I'm glad you're monitoring your outbound internet traffic. The calculator is downloading a .xlsx copy of Trouble's DHC Tier List to fill out your Hero Capabilities sheet automatically. Again, all of the code included in the calculator is saved here separately in project files for your review. In addition, you can simply choose not to Import Data and fill out the hero ratings on your own - the program only connects to the internet when you tell it to by requesting imported data.  
+
 Required software
 * This calculator requires a program that can open an .xlsm file. To make full use of the calculator's automated features,
 this would be a copy of Microsoft Excel, but the calculator can also be easily modified to work without access to VBA.
