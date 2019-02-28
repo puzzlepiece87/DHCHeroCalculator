@@ -593,7 +593,7 @@ Private Function GetDictTierListTableColumnsByHeader(ByVal arrTroubleTierListTab
     Dim Loop1 As Long
     For Loop1 = LBound(arrTroubleTierListTable, 2) To UBound(arrTroubleTierListTable, 2)
         Select Case arrTroubleTierListTable(1, Loop1)
-            Case "Family", "Element", "ED11", "SW10", "OH", "UB", "KOF", "Coop", "AO", "AD", "5v5", "GWO", "GWD"
+            Case "Family", "Element", "ED11", "SW10", "SW11", "OH", "UB", "KOF", "Coop", "AO", "AD", "5v5", "GWO", "GWD"
                 dictTierListTableColumnsByHeader.Add arrTroubleTierListTable(1, Loop1), Loop1
         End Select
     Next Loop1
@@ -612,7 +612,7 @@ Private Function GetDictHeroCapabilitiesColumnsByHeader(ByVal arrHeroCapabilitie
     Dim Loop1 As Long
     For Loop1 = LBound(arrHeroCapabilitiesTable, 2) To UBound(arrHeroCapabilitiesTable, 2)
         Select Case arrHeroCapabilitiesTable(1, Loop1)
-            Case "Hero", "Color", "ED", "SW", "OH", "Blitz", "KoF", "Baldragor", "A Offense", "A Defense", "5v5", "GW Offense", "GW Defense"
+            Case "Hero", "Color", "ED", "SW10", "SW11", "OH", "Blitz", "KoF", "Baldragor", "A Offense", "A Defense", "5v5", "GW Offense", "GW Defense"
                 dictHeroCapabilitiesColumnsByHeader.Add arrHeroCapabilitiesTable(1, Loop1), Loop1
         End Select
     Next Loop1
@@ -631,7 +631,8 @@ Private Function GetDictHeroCapabilitiesHeadersByTierListHeaders() As Scripting.
     dictHeroCapabilitiesHeadersByTierListHeaders.Add "Family", "Hero"
     dictHeroCapabilitiesHeadersByTierListHeaders.Add "Element", "Color"
     dictHeroCapabilitiesHeadersByTierListHeaders.Add "ED11", "ED"
-    dictHeroCapabilitiesHeadersByTierListHeaders.Add "SW10", "SW"
+    dictHeroCapabilitiesHeadersByTierListHeaders.Add "SW10", "SW10"
+    dictHeroCapabilitiesHeadersByTierListHeaders.Add "SW11", "SW11"
     dictHeroCapabilitiesHeadersByTierListHeaders.Add "OH", "OH"
     dictHeroCapabilitiesHeadersByTierListHeaders.Add "UB", "Blitz"
     dictHeroCapabilitiesHeadersByTierListHeaders.Add "KOF", "KoF"
