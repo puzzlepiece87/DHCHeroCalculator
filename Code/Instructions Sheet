@@ -3,6 +3,7 @@ Option Explicit
 
 Private Sub AddNewHero_Click()
 
+    If ReferencesUpdated = False Then Exit Sub
     HeroContributionsToTeam.AutoFilterMode = False
     HeroCapabilities.AutoFilterMode = False
     
@@ -15,6 +16,7 @@ End Sub
 
 Private Sub UpdateCalculator_Click()
 
+    If ReferencesUpdated = False Then Exit Sub
     Application.ScreenUpdating = False
     
     HeroContributionsToTeam.AutoFilterMode = False
@@ -37,6 +39,7 @@ End Sub
 
 Private Sub ImportData_Click()
 
+    If ReferencesUpdated = False Then Exit Sub
     HeroContributionsToTeam.AutoFilterMode = False
     HeroCapabilities.AutoFilterMode = False
     
@@ -666,5 +669,21 @@ Private Function GetDictHeroCapabilitiesNumberByTierListLetterGrade() As Scripti
     dictHeroCapabilitiesNumberByTierListLetterGrade.Add "SS", 7
     
     Set GetDictHeroCapabilitiesNumberByTierListLetterGrade = dictHeroCapabilitiesNumberByTierListLetterGrade
+
+End Function
+
+
+Private Function ReferencesUpdated() As Boolean
+
+    If Application.Version <> 14 Then
+        If vbNo = MsgBox("Hi - your version of Excel is different than puzzlepiece87's Excel 2010. Have you updated your references? If you're not sure, push no. Don't worry, this will only take two seconds.", vbYesNo, "References Updated?") Then
+            MsgBox "Do this really quick so the program will work properly:" & vbCrLf & "1. Push Alt-F11" & vbCrLf & "2. Menu bar --> Tools --> References" & vbCrLf & "For any library that says " & """" & "MISSING" & """" & ", uncheck it, scroll down, and check the one with the identical name but different version number instead."
+            ReferencesUpdated = False
+        Else
+            ReferencesUpdated = True
+        End If
+    Else
+        ReferencesUpdated = True
+    End If
 
 End Function
