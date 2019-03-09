@@ -173,10 +173,14 @@ Private Sub MatchHeroListingsBetweenSheets()
         End If
     Next varKey
 
+    Dim lngRowsDeleted As Long
+    lngRowsDeleted = 0
+
     For Each varKey In dictHeroesOnContributionsSheet.Keys
         If dictHeroesOnCapabilitiesSheet.Exists(varKey) = False Then
             With HeroContributionsToTeam
-                .Rows(dictHeroesOnContributionsSheet.Item(varKey)).EntireRow.Delete
+                .Rows(dictHeroesOnContributionsSheet.Item(varKey) - lngRowsDeleted).EntireRow.Delete
+                lngRowsDeleted = lngRowsDeleted + 1
             End With
         End If
     Next varKey
