@@ -1,0 +1,301 @@
+Option Explicit
+
+
+Private Sub btnImport_Click()
+
+    Dim ImportManyHeroesForm As ufImportManyHeroesForm
+    Set ImportManyHeroesForm = Me
+
+    If ErrorsPresent(ImportManyHeroesForm) = False Then
+        DownloadTroubleTierListFileFromGoogleSheets
+        
+        Dim wbkTroubleTierList As Workbook
+        Set wbkTroubleTierList = GetTroubleTierListWorkbook
+        
+        AddMissingHeroNamesAndElements wbkTroubleTierList, ImportManyHeroesForm
+        
+        Application.DisplayAlerts = False
+        wbkTroubleTierList.Close
+        Application.DisplayAlerts = True
+        
+        DeleteTroubleTierListFile
+        
+        Me.Hide
+        MsgBox "Heroes imported. Please note that no Purple Ritual Material information is available so all imported heroes have been marked No in that column regardless of whether that is actually correct."
+    End If
+
+End Sub
+
+
+Private Function ErrorsPresent(ByVal ImportManyHeroesForm As ufImportManyHeroesForm) As Boolean
+
+    ErrorsPresent = False
+    
+    With ImportManyHeroesForm
+        If .radio5StarYes = False And .radio5StarNo = False Then
+            MsgBox "Must select whether to import nat 5* heroes."
+            ErrorsPresent = True
+            Exit Function
+        End If
+    
+        If .radioLightDarkYes = False And .radioLightDarkNo = False Then
+            MsgBox "Must select whether to import Light/Dark heroes."
+            ErrorsPresent = True
+            Exit Function
+        End If
+    End With
+
+End Function
+
+
+Private Function GetLastRowOfSheetInColumn(ByVal ShtInQuestion As Worksheet, ByVal lngColumnInQuestion As Long) As Long
+
+    With ShtInQuestion
+        'Using the end up method on a full sheet will go all the way to the top
+        If .Cells(.Rows.Count, lngColumnInQuestion).Value <> vbNullString Then
+            GetLastRowOfSheetInColumn = .Rows.Count
+        Else
+            GetLastRowOfSheetInColumn = .Cells(.Rows.Count, lngColumnInQuestion).End(xlUp).Row
+        End If
+    End With
+
+End Function
+
+
+Private Function GetCellWithValueInRange(ByVal rngToSearch As Range, ByVal strValueToFind As String, ByVal boolWholeValue As Boolean) As Range
+
+    Dim rngFound As Range
+    If boolWholeValue = True Then
+        Set rngFound = rngToSearch.Find(What:=strValueToFind, Lookat:=xlWhole)
+    Else
+        Set rngFound = rngToSearch.Find(What:=strValueToFind, Lookat:=xlPart)
+    End If
+
+    If rngFound Is Nothing Then
+        MsgBox "Can't find " & strValueToFind & " in " & rngToSearch.Address & " on the " & rngToSearch.Parent.Name & " sheet of the " & rngToSearch.Parent.Parent.Name & " workbook. This program cannot continue until it is present."
+        'Cancel
+    End If
+    
+    Set GetCellWithValueInRange = rngFound
+    
+End Function
+
+
+Private Sub DownloadTroubleTierListFileFromGoogleSheets()
+
+    Dim strURL As String
+    strURL = GetCellWithValueInRange(Settings.Columns(1), "Trouble's Tier List", True).Offset(0, 1).Value
+    
+    Dim XMLHTTP As MSXML2.XMLHTTP60
+    Set XMLHTTP = New MSXML2.XMLHTTP60
+    
+    With XMLHTTP
+        .Open "Get", strURL, False
+        .send
+        
+        'Wait for request to finish
+        Do While .readyState <> 4
+            DoEvents
+        Loop
+        
+        Dim byteResponse() As Byte
+        byteResponse = .responseBody
+    End With
+
+    Dim Shell As IWshRuntimeLibrary.WshShell
+    Set Shell = New IWshRuntimeLibrary.WshShell
+    
+    Dim strSaveLocation As String
+    strSaveLocation = Shell.SpecialFolders("Desktop") & Application.PathSeparator & "Trouble DHC Tier List.xlsx"
+    
+    Dim FSO As Scripting.FileSystemObject
+    Set FSO = New Scripting.FileSystemObject
+    
+    If FSO.FileExists(strSaveLocation) = True Then FSO.DeleteFile strSaveLocation
+    
+    Dim Int1 As Integer
+    Int1 = FreeFile()
+    Open strSaveLocation For Binary As #Int1
+    Put #Int1, , byteResponse
+    Close #Int1
+    
+    Set XMLHTTP = Nothing
+
+End Sub
+
+
+Private Function GetTroubleTierListWorkbook() As Workbook
+
+    Dim Shell As IWshRuntimeLibrary.WshShell
+    Set Shell = New IWshRuntimeLibrary.WshShell
+    
+    Dim strSaveLocation As String
+    strSaveLocation = Shell.SpecialFolders("Desktop") & Application.PathSeparator & "Trouble DHC Tier List.xlsx"
+    
+    Workbooks.Open strSaveLocation
+    Set GetTroubleTierListWorkbook = ActiveWorkbook
+
+End Function
+
+
+Private Sub AddMissingHeroNamesAndElements(ByVal wbkTroubleTierList As Workbook, ByVal ImportManyHeroesForm As ufImportManyHeroesForm)
+
+    Dim dictHeroCapabilitiesHeroesAndColors As Scripting.Dictionary
+    Set dictHeroCapabilitiesHeroesAndColors = GetDictHeroCapabilitiesHeroesAndColors
+    
+    Dim dictHeroesOnTierListSheet As Scripting.Dictionary
+    
+    Dim shtLoop As Worksheet
+    For Each shtLoop In wbkTroubleTierList.Worksheets
+        If shtLoop.Index = 1 Then
+            If ImportManyHeroesForm.radio5StarYes = True Then
+                Set dictHeroesOnTierListSheet = GetDictTroubleTierListHeroesAndColors(shtLoop, ImportManyHeroesForm.radioLightDarkYes)
+                CopyMissingHeroNamesAndColorsToHeroCapabilities dictHeroesOnTierListSheet, ImportManyHeroesForm
+            End If
+        Else
+            Set dictHeroesOnTierListSheet = GetDictTroubleTierListHeroesAndColors(shtLoop, ImportManyHeroesForm.radioLightDarkYes)
+            CopyMissingHeroNamesAndColorsToHeroCapabilities dictHeroesOnTierListSheet, dictHeroCapabilitiesHeroesAndColors
+        End If
+    Next shtLoop
+
+End Sub
+
+
+Private Sub DeleteTroubleTierListFile()
+
+    Dim Shell As IWshRuntimeLibrary.WshShell
+    Set Shell = New IWshRuntimeLibrary.WshShell
+    
+    Dim strSaveLocation As String
+    strSaveLocation = Shell.SpecialFolders("Desktop") & Application.PathSeparator & "Trouble DHC Tier List.xlsx"
+    
+    Dim FSO As Scripting.FileSystemObject
+    Set FSO = New Scripting.FileSystemObject
+    
+    If FSO.FileExists(strSaveLocation) = True Then FSO.DeleteFile strSaveLocation
+
+End Sub
+
+
+Private Sub CopyMissingHeroNamesAndColorsToHeroCapabilities(ByVal dictTroubleTierListHeroesAndColors As Scripting.Dictionary, ByVal dictHeroCapabilitiesHeroesAndColors As Scripting.Dictionary)
+
+    With HeroCapabilities
+        Dim lngHeroColumn As Long
+        lngHeroColumn = GetCellWithValueInRange(HeroCapabilities.Cells, "Hero", True).Column
+        Dim lngColorColumn As Long
+        lngColorColumn = GetCellWithValueInRange(HeroCapabilities.Cells, "Color", True).Column
+        Dim lngPurpleRitualMaterialColumn As Long
+        lngPurpleRitualMaterialColumn = GetCellWithValueInRange(HeroCapabilities.Cells, "Purple Ritual", True).Column
+            
+        Dim lngLastRow As Long
+        lngLastRow = GetLastRowOfSheetInColumn(HeroCapabilities, 1)
+            
+        Dim rngPotentialNewHeroes As Range
+        Set rngPotentialNewHeroes = .Range(.Cells(lngLastRow + 1, lngHeroColumn), .Cells(lngLastRow + dictTroubleTierListHeroesAndColors.Count, lngPurpleRitualMaterialColumn))
+        
+        Dim arrPotentialNewHeroes() As Variant
+        arrPotentialNewHeroes = ConvertRangeToArray(rngPotentialNewHeroes)
+        
+        Dim lngArrPotentialNewHeroesRow As Long
+        lngArrPotentialNewHeroesRow = 1
+    
+        Dim varKey As Variant
+        For Each varKey In dictTroubleTierListHeroesAndColors.Keys
+            If dictHeroCapabilitiesHeroesAndColors.Exists(varKey) = False Then
+                arrPotentialNewHeroes(lngArrPotentialNewHeroesRow, lngHeroColumn) = Left(varKey, InStr(1, varKey, "|", vbTextCompare) - 1)
+                arrPotentialNewHeroes(lngArrPotentialNewHeroesRow, lngColorColumn) = Right(varKey, Len(varKey) - InStrRev(varKey, "|", -1, vbTextCompare))
+                arrPotentialNewHeroes(lngArrPotentialNewHeroesRow, lngPurpleRitualMaterialColumn) = "N"
+            
+                lngArrPotentialNewHeroesRow = lngArrPotentialNewHeroesRow + 1
+            End If
+        Next varKey
+        
+        rngPotentialNewHeroes.Value = arrPotentialNewHeroes
+    End With
+    
+End Sub
+
+
+Private Function GetDictTroubleTierListHeroesAndColors(ByVal shtLoop As Worksheet, ByVal boolIncludeLightDark As Boolean) As Scripting.Dictionary
+
+    Set GetDictTroubleTierListHeroesAndColors = New Scripting.Dictionary
+    GetDictTroubleTierListHeroesAndColors.CompareMode = TextCompare
+
+    With shtLoop
+        Dim rngFamily As Range
+        Set rngFamily = GetCellWithValueInRange(shtLoop.Cells, "Family", True)
+        Dim rngElement As Range
+        Set rngElement = GetCellWithValueInRange(shtLoop.Cells, "Element", True)
+        
+        Dim lngLastRow As Long
+        lngLastRow = GetLastRowOfSheetInColumn(shtLoop, rngFamily.Column)
+        
+        Dim arrTable() As Variant
+        arrTable = ConvertRangeToArray(.Range(.Cells(rngFamily.Row + 1, WorksheetFunction.Min(rngFamily.Column, rngElement.Column)), .Cells(lngLastRow, WorksheetFunction.Max(rngFamily.Column, rngElement.Column))))
+    
+        Dim lngFamilyColumnInArray As Long
+        lngFamilyColumnInArray = rngFamily.Column - WorksheetFunction.Min(rngFamily.Column, rngElement.Column) + 1
+        Dim lngElementColumnInArray As Long
+        lngElementColumnInArray = rngElement.Column - WorksheetFunction.Min(rngFamily.Column, rngElement.Column) + 1
+    
+        Dim Loop1 As Long
+        For Loop1 = LBound(arrTable, 1) To UBound(arrTable, 1)
+            If boolIncludeLightDark = True Then
+                GetDictTroubleTierListHeroesAndColors.Add arrTable(Loop1, lngFamilyColumnInArray) & "|" & arrTable(Loop1, lngElementColumnInArray), Loop1
+            Else
+                If arrTable(Loop1, lngElementColumnInArray) <> "Light" And arrTable(Loop1, lngElementColumnInArray) <> "Dark" Then
+                    GetDictTroubleTierListHeroesAndColors.Add arrTable(Loop1, lngFamilyColumnInArray) & "|" & arrTable(Loop1, lngElementColumnInArray), Loop1
+                End If
+            End If
+        Next Loop1
+    End With
+    
+End Function
+
+
+Private Function ConvertRangeToArray(ByVal rngInQuestion As Range) As Variant
+
+    Dim arrRangeToArray() As Variant
+    With rngInQuestion
+        If .Cells.Count = 1 Then
+            ReDim arrRangeToArray(1 To 1, 1 To 1)
+            arrRangeToArray(1, 1) = .Cells(1, 1).Value
+        Else
+            arrRangeToArray = .Value
+        End If
+    End With
+
+    ConvertRangeToArray = arrRangeToArray
+
+End Function
+
+
+Private Function GetDictHeroCapabilitiesHeroesAndColors() As Scripting.Dictionary
+
+    Set GetDictHeroCapabilitiesHeroesAndColors = New Scripting.Dictionary
+    GetDictHeroCapabilitiesHeroesAndColors.CompareMode = TextCompare
+
+    With HeroCapabilities
+        Dim rngHero As Range
+        Set rngHero = GetCellWithValueInRange(HeroCapabilities.Cells, "Hero", True)
+        Dim rngColor As Range
+        Set rngColor = GetCellWithValueInRange(HeroCapabilities.Cells, "Color", True)
+        
+        Dim lngLastRow As Long
+        lngLastRow = GetLastRowOfSheetInColumn(HeroCapabilities, rngHero.Column)
+        
+        Dim arrTable() As Variant
+        arrTable = ConvertRangeToArray(.Range(.Cells(rngHero.Row + 1, WorksheetFunction.Min(rngHero.Column, rngColor.Column)), .Cells(lngLastRow, WorksheetFunction.Max(rngHero.Column, rngColor.Column))))
+    
+        Dim lngHeroColumnInArray As Long
+        lngHeroColumnInArray = rngHero.Column - WorksheetFunction.Min(rngHero.Column, rngColor.Column) + 1
+        Dim lngColorColumnInArray As Long
+        lngColorColumnInArray = rngColor.Column - WorksheetFunction.Min(rngHero.Column, rngColor.Column) + 1
+    
+        Dim Loop1 As Long
+        For Loop1 = LBound(arrTable, 1) To UBound(arrTable, 1)
+            GetDictHeroCapabilitiesHeroesAndColors.Add arrTable(Loop1, lngHeroColumnInArray) & "|" & arrTable(Loop1, lngColorColumnInArray), Loop1
+        Next Loop1
+    End With
+    
+End Function
