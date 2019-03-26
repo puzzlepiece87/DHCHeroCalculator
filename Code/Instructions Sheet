@@ -1,20 +1,33 @@
 Option Explicit
 
 
-Private Sub AddNewHero_Click()
+Private Sub btnAddOneHero_Click()
 
     If ReferencesUpdated = False Then Exit Sub
     HeroContributionsToTeam.AutoFilterMode = False
     HeroCapabilities.AutoFilterMode = False
     
-    Dim AddHeroForm As ufAddHeroForm
-    Set AddHeroForm = New ufAddHeroForm
-    AddHeroForm.Show
+    Dim AddOneHeroForm As ufAddOneHeroForm
+    Set AddOneHeroForm = New ufAddOneHeroForm
+    AddOneHeroForm.Show
 
 End Sub
 
 
-Private Sub UpdateCalculator_Click()
+Private Sub btnImportManyHeroes_Click()
+
+    If ReferencesUpdated = False Then Exit Sub
+    HeroContributionsToTeam.AutoFilterMode = False
+    HeroCapabilities.AutoFilterMode = False
+    
+    Dim ImportManyHeroesForm As ufImportManyHeroesForm
+    Set ImportManyHeroesForm = New ufImportManyHeroesForm
+    ImportManyHeroesForm.Show
+
+End Sub
+
+
+Private Sub btnUpdateCalculator_Click()
 
     If ReferencesUpdated = False Then Exit Sub
     Application.ScreenUpdating = False
@@ -37,7 +50,7 @@ Private Sub UpdateCalculator_Click()
 End Sub
 
 
-Private Sub ImportData_Click()
+Private Sub btnImportData_Click()
 
     If ReferencesUpdated = False Then Exit Sub
     HeroContributionsToTeam.AutoFilterMode = False
@@ -600,7 +613,7 @@ Private Function GetDictTierListTableColumnsByHeader(ByVal arrTroubleTierListTab
     Dim Loop1 As Long
     For Loop1 = LBound(arrTroubleTierListTable, 2) To UBound(arrTroubleTierListTable, 2)
         Select Case arrTroubleTierListTable(1, Loop1)
-            Case "Family", "Element", "ED11", "SW10", "SW11", "OH", "UB", "KOF", "Coop", "AO", "AD", "5v5", "GWO", "GWD"
+            Case "Family", "Element", "ED11", "SW10", "SW11", "OH10", "UB", "KOF10", "Coop", "AO", "AD", "5v5", "GWO", "GWD"
                 dictTierListTableColumnsByHeader.Add arrTroubleTierListTable(1, Loop1), Loop1
         End Select
     Next Loop1
@@ -640,9 +653,9 @@ Private Function GetDictHeroCapabilitiesHeadersByTierListHeaders() As Scripting.
     dictHeroCapabilitiesHeadersByTierListHeaders.Add "ED11", "ED"
     dictHeroCapabilitiesHeadersByTierListHeaders.Add "SW10", "SW10"
     dictHeroCapabilitiesHeadersByTierListHeaders.Add "SW11", "SW11"
-    dictHeroCapabilitiesHeadersByTierListHeaders.Add "OH", "OH"
+    dictHeroCapabilitiesHeadersByTierListHeaders.Add "OH10", "OH"
     dictHeroCapabilitiesHeadersByTierListHeaders.Add "UB", "Blitz"
-    dictHeroCapabilitiesHeadersByTierListHeaders.Add "KOF", "KoF"
+    dictHeroCapabilitiesHeadersByTierListHeaders.Add "KOF10", "KoF"
     dictHeroCapabilitiesHeadersByTierListHeaders.Add "Coop", "Baldragor"
     dictHeroCapabilitiesHeadersByTierListHeaders.Add "AO", "A Offense"
     dictHeroCapabilitiesHeadersByTierListHeaders.Add "AD", "A Defense"
