@@ -3,13 +3,11 @@ Option Explicit
 
 Private Sub btnDone_Click()
 
-    Dim AddHeroForm As ufAddHeroForm
-    Set AddHeroForm = Me
+    Dim AddOneHeroForm As ufAddOneHeroForm
+    Set AddOneHeroForm = Me
 
-    If ErrorsPresent(AddHeroForm) = False Then
+    If ErrorsPresent(AddOneHeroForm) = False Then
         Dim lngLastRow As Long
-        Dim lngLastColumn As Long
-        Dim rngEntireTable As Range
         
         With HeroCapabilities
             lngLastRow = GetLastRowOfSheetInColumn(HeroCapabilities, 1)
@@ -18,28 +16,17 @@ Private Sub btnDone_Click()
             lngHeroColumn = GetCellWithValueInRange(.Rows(1), "Hero", True).Column
             Dim lngColorColumn As Long
             lngColorColumn = GetCellWithValueInRange(.Rows(1), "Color", True).Column
-
-            Dim lng5v5Column As Long
-            lng5v5Column = GetCellWithValueInRange(.Rows(1), "5v5", True).Column
             Dim lngPurpleRitualMaterialColumn As Long
             lngPurpleRitualMaterialColumn = GetCellWithValueInRange(.Rows(1), "Purple Ritual", True).Column
                             
-            .Cells(lngLastRow + 1, lngHeroColumn).Value = AddHeroForm.textboxHeroName.Value
-            .Cells(lngLastRow + 1, lngColorColumn).Value = GetHeroColor(AddHeroForm)
+            .Cells(lngLastRow + 1, lngHeroColumn).Value = AddOneHeroForm.textboxHeroName.Value
+            .Cells(lngLastRow + 1, lngColorColumn).Value = GetHeroColor(AddOneHeroForm)
             
-            If AddHeroForm.chkboxPurpleRitualMaterial = True Then
+            If AddOneHeroForm.chkboxPurpleRitualMaterial = True Then
                 .Cells(lngLastRow + 1, lngPurpleRitualMaterialColumn).Value = "Y"
             Else
                 .Cells(lngLastRow + 1, lngPurpleRitualMaterialColumn).Value = "N"
             End If
-            
-            
-            lngLastRow = GetLastRowOfSheetInColumn(HeroContributionsToTeam, 1)
-            lngLastColumn = GetLastColumnOfSheetInRow(HeroContributionsToTeam, 1)
-            
-            Set rngEntireTable = .Range(.Cells(1, 1), .Cells(lngLastRow, lngLastColumn))
-                        
-            rngEntireTable.Sort Key1:=.Cells(2, lngColorColumn), Order1:=xlAscending, Key2:=.Cells(2, lngHeroColumn), Order2:=xlAscending, Header:=xlYes
         End With
         
         Me.Hide
@@ -49,11 +36,11 @@ Private Sub btnDone_Click()
 End Sub
 
 
-Private Function ErrorsPresent(ByVal AddHeroForm As ufAddHeroForm) As Boolean
+Private Function ErrorsPresent(ByVal AddOneHeroForm As ufAddOneHeroForm) As Boolean
 
     ErrorsPresent = False
     
-    With AddHeroForm
+    With AddOneHeroForm
         If .textboxHeroName.Value = vbNullString Then
             MsgBox "Must include Hero Name."
             ErrorsPresent = True
@@ -84,20 +71,6 @@ Private Function GetLastRowOfSheetInColumn(ByVal ShtInQuestion As Worksheet, ByV
 End Function
 
 
-Private Function GetLastColumnOfSheetInRow(ByVal ShtInQuestion As Worksheet, ByVal lngRowInQuestion As Long) As Long
-
-    With ShtInQuestion
-        'Using the end left method on a full sheet will go all the way to the left
-        If .Cells(lngRowInQuestion, .Columns.Count).Value <> vbNullString Then
-            GetLastColumnOfSheetInRow = .Columns.Count
-        Else
-            GetLastColumnOfSheetInRow = .Cells(lngRowInQuestion, .Columns.Count).End(xlToLeft).Column
-        End If
-    End With
-
-End Function
-
-
 Private Function GetCellWithValueInRange(ByVal rngToSearch As Range, ByVal strValueToFind As String, ByVal boolWholeValue As Boolean) As Range
 
     Dim rngFound As Range
@@ -117,18 +90,18 @@ Private Function GetCellWithValueInRange(ByVal rngToSearch As Range, ByVal strVa
 End Function
 
 
-Private Function GetHeroColor(ByVal AddHeroForm As ufAddHeroForm) As String
+Private Function GetHeroColor(ByVal AddOneHeroForm As ufAddOneHeroForm) As String
 
     Select Case True
-        Case AddHeroForm.radioFire
+        Case AddOneHeroForm.radioFire
             GetHeroColor = "Fire"
-        Case AddHeroForm.radioWater
+        Case AddOneHeroForm.radioWater
             GetHeroColor = "Water"
-        Case AddHeroForm.radioNature
+        Case AddOneHeroForm.radioNature
             GetHeroColor = "Nature"
-        Case AddHeroForm.radioLight
+        Case AddOneHeroForm.radioLight
             GetHeroColor = "Light"
-        Case AddHeroForm.radioDark
+        Case AddOneHeroForm.radioDark
             GetHeroColor = "Dark"
         Case Else
             GetHeroColor = 0
